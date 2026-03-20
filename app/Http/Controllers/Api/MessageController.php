@@ -28,11 +28,13 @@ class MessageController extends Controller
         $telefonoCompleto = $data['data']['key']['remoteJid'];
         $phone = explode('@', $telefonoCompleto)[0];
 
+        // echo $phone;die();
+
         if ($phone == '573241579494') {
-            return;
+            die();
         }
         if ($phone !== '573193787211') {
-            return;
+            die();
         }
 
         // Extraer mensaje
