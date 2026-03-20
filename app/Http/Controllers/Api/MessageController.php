@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 use App\Models\Contact;
@@ -150,12 +151,38 @@ class MessageController extends Controller
                 ];
             });
 
+        $rows = DB::select("SELECT * FROM (
+        SELECT 
+            z.id, 
+            CASE z.direction
+                WHEN 'incoming' THEN 'cliente'
+                WHEN 'outgoing' THEN 'asesor'
+            END AS tipo,
+            z.content 
+        FROM last_messages_view z
+        LEFT JOIN contacts c ON c.id = z.contact_id
+        WHERE c.phone IN ($phone, '573241579494')
+            AND z.conversation_id = $conversation->id
+        ORDER BY z.id DESC
+        LIMIT 10
+    ) zz
+    ORDER BY zz.id ASC;");
+
+        $context = collect($rows)->map(function ($row) {
+            return [
+                'id' => $row->id,
+                'role' => $row->tipo, // cliente / asesor
+                'message' => $row->content,
+            ];
+        })->values();
+
         //llamar a n8n con el mensaje entrante del usuario
         Http::post('https://n8n.wolfora.cloud/webhook/mensaje', [
             'contact_id' => $contact->id,
             'conversation_id' => $conversation->id,
             'message' => $text,
-            'number' => $phone
+            'number' => $phone,
+            'context' => $context
         ]);
 
         return response()->json([
