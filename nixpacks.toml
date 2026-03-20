@@ -1,0 +1,18 @@
+# nixpacks.toml
+[phases.setup]
+packages = ["php@8.3", "php-mbstring", "php-bcmath", "php-pdo", "composer", "npm", "nodejs", "git"]
+
+[phases.install]
+# comandos que quieres correr al instalar dependencias
+commands = [
+  "composer install --no-dev --optimize-autoloader",
+  "npm install",
+  "php artisan key:generate",
+  "php artisan config:cache"
+]
+
+[phases.build]
+# comandos que quieres correr en la fase build
+commands = [
+  "npm run build"
+]
