@@ -21,8 +21,14 @@ class MessageController extends Controller
 
     public function incoming(Request $request)
     {
-        $phone = $request->input('phone');
-        $text = $request->input('message');
+        $data = $request->all();
+
+        // Extraer teléfono (sin el @s.whatsapp.net)
+        $telefonoCompleto = $data['data']['key']['remoteJid'];
+        $phone = explode('@', $telefonoCompleto)[0];
+
+        // Extraer mensaje
+        $text = $data['data']['message']['conversation'] ?? null;
 
         if (!$phone || !$text) {
             return response()->json([
@@ -67,7 +73,6 @@ class MessageController extends Controller
                 'message_count' => 1,
                 'window_start' => now()
             ]);
-
         } else {
 
             $spam->increment('message_count');
@@ -133,7 +138,6 @@ class MessageController extends Controller
                     'role' => $msg->direction === 'incoming' ? 'user' : 'assistant',
                     'content' => $msg->content
                 ];
-
             });
 
         return response()->json([
@@ -184,5 +188,4 @@ class MessageController extends Controller
             'message_id' => $message->id
         ]);
     }
-
 }
