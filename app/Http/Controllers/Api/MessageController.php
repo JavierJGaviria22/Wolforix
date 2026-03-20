@@ -195,7 +195,10 @@ class MessageController extends Controller
             ]);
 
         //llamar a evoluton api enviando el mensaje al cliente
-        Http::post('https://wpp.wolfora.cloud/message/sendText/wpp-test', [
+        Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'apikey' => 'supersecreta123',
+        ])->post('https://wpp.wolfora.cloud/message/sendText/wpp-test', [
             'number' => $number,
             'text' => $text
         ]);
