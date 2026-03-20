@@ -182,7 +182,7 @@ class MessageController extends Controller
             'conversation_id' => $conversation->id,
             'message' => $text,
             'number' => $phone,
-            'context' => $context
+            'context' => json_encode($context)
         ]);
 
         return response()->json([
