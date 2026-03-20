@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 
 use App\Models\Contact;
@@ -140,6 +141,13 @@ class MessageController extends Controller
                 ];
             });
 
+        //llamar a n8n con el mensaje entrante del usuario
+        Http::post('https://n8n.wolfora.cloud/webhook/mensaje', [
+            'contact_id' => $contact->id,
+            'conversation_id' => $conversation->id,
+            'message' => $text
+        ]);
+
         return response()->json([
             'success' => true,
             'contact_id' => $contact->id,
@@ -157,10 +165,11 @@ class MessageController extends Controller
 
     public function outgoing(Request $request)
     {
+        //recibir la peticion de n8n con la respuesta, guardar en db y ejecutar el envio del mensaje (evolution api)
 
         $conversationId = $request->input('conversation_id');
         $contactId = $request->input('contact_id');
-        $text = $request->input('message');
+        $text = $request->input('text');
 
         if (!$conversationId || !$contactId || !$text) {
 
