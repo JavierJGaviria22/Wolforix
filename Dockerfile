@@ -1,7 +1,6 @@
-# Stage 1: Build dependencies
-FROM php:8.2-fpm-alpine AS builder
+# Stage 1: Construir dependencias y assets
+FROM php:8.3-fpm-alpine AS builder
 
-# Install system dependencies
 RUN apk add --no-cache \
     build-base \
     libpng-dev \
@@ -14,83 +13,42 @@ RUN apk add --no-cache \
     npm \
     nodejs
 
-# Install PHP extensions
-RUN docker-php-ext-install -j$(nproc) \
-    gd \
-    zip \
-    bcmath \
-    pdo \
-    pdo_mysql
+RUN docker-php-ext-install gd zip bcmath pdo pdo_mysql
 
-# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-
-# Copy project files
 COPY . .
 
-# Install PHP dependencies
+# Instalamos todo
 RUN composer install --optimize-autoloader --no-dev --no-interaction
-
-# Install Node dependencies and build assets
 RUN npm install && npm run build
 
-# Remove node_modules and npm cache to reduce image size
-RUN rm -rf node_modules npm-cache package-lock.json
+# Stage 2: Runtime ligero
+FROM php:8.3-fpm-alpine
 
----
-
-# Stage 2: Runtime
-FROM php:8.2-fpm-alpine
-
-# Install runtime dependencies
+# Dependencias mínimas para que PHP corra
 RUN apk add --no-cache \
     libpng \
     libjpeg-turbo \
     libwebp \
-    zlib \
     libzip \
-    nginx \
-    supervisor \
     curl
 
-# Install PHP extensions
-RUN docker-php-ext-install -j$(nproc) \
-    gd \
-    zip \
-    bcmath \
-    pdo \
-    pdo_mysql
-
-# Copy PHP configuration
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/app.ini
-COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
-
-# Copy Nginx configuration
-COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-
-# Copy Supervisor configuration
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN docker-php-ext-install gd zip bcmath pdo pdo_mysql
 
 WORKDIR /app
 
-# Copy built application from builder stage
-COPY --from=builder /app /app
-COPY --chown=www-data:www-data . .
+# Copiamos el resultado del builder
+COPY --from=builder --chown=www-data:www-data /app /app
 
-# Create necessary directories and set permissions
-RUN mkdir -p storage/logs storage/framework/{cache,sessions,testing} bootstrap/cache public/build \
-    && chown -R www-data:www-data /app \
-    && chmod -R 755 storage bootstrap/cache
+# Permisos críticos para Laravel
+RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
 
-# Expose port
-EXPOSE 80
+# Exponemos el puerto de Artisan
+EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
-
-# Start supervisor (manages nginx and php-fpm)
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Comando directo para arrancar el prototipo
+CMD php artisan optimize && php artisan serve --host=0.0.0.0 --port=8000
