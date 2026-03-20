@@ -1,9 +1,7 @@
-# nixpacks.toml - Laravel 12 con PHP 8.3 en Coolify
-
+# nixpacks.toml compatible con Nixpacks 7+
 [phases.setup]
-# Paquetes base necesarios para Laravel + npm
 packages = [
-  "php@8.3",          # PHP 8.3 para compatibilidad con spatie/laravel-permission 7.2.2
+  "php@8.3",
   "php-mbstring",
   "php-bcmath",
   "php-pdo",
@@ -18,31 +16,18 @@ packages = [
 ]
 
 [phases.install]
-# Comandos que corren durante la fase de instalación
 commands = [
-  # Instala dependencias de Composer
   "composer install --no-dev --optimize-autoloader",
-
-  # Instala dependencias de Node/NPM
   "npm install",
-
-  # Genera la APP_KEY si no existe
   "php artisan key:generate",
-
-  # Cache de configuración
   "php artisan config:cache",
-
-  # Cache de rutas (opcional, mejora performance)
   "php artisan route:cache"
 ]
 
 [phases.build]
-# Comandos que corren en la fase build
 commands = [
-  # Compila assets si usas Laravel Mix o Vite
   "npm run build"
 ]
 
 [phases.start]
-# Comando para iniciar la aplicación
 command = "php artisan serve --host=0.0.0.0 --port=$PORT"
