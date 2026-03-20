@@ -145,7 +145,8 @@ class MessageController extends Controller
         Http::post('https://n8n.wolfora.cloud/webhook/mensaje', [
             'contact_id' => $contact->id,
             'conversation_id' => $conversation->id,
-            'message' => $text
+            'message' => $text,
+            'number' => $phone
         ]);
 
         return response()->json([
@@ -170,6 +171,7 @@ class MessageController extends Controller
         $conversationId = $request->input('conversation_id');
         $contactId = $request->input('contact_id');
         $text = $request->input('text');
+        $number = $request->input('number');
 
         if (!$conversationId || !$contactId || !$text) {
 
@@ -191,6 +193,12 @@ class MessageController extends Controller
             ->update([
                 'last_message_at' => now()
             ]);
+
+        //llamar a evoluton api enviando el mensaje al cliente
+        Http::post('https://wpp.wolfora.cloud/message/sendText/wpp-test', [
+            'number' => $number,
+            'text' => $text
+        ]);
 
         return response()->json([
             'success' => true,
