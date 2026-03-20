@@ -31,6 +31,9 @@ class MessageController extends Controller
         if ($phone == '573241579494') {
             return;
         }
+        if ($phone !== '573193787211') {
+            return;
+        }
 
         // Extraer mensaje
         $text = $data['data']['message']['conversation'] ?? null;
