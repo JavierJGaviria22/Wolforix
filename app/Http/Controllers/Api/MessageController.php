@@ -21,11 +21,8 @@ class MessageController extends Controller
 
     public function incoming(Request $request)
     {
-        // $phone = $request->input('phone');
-        // $text = $request->input('message');
-
-        $phone = '3116189091';
-        $text = 'prueba webhook1';
+        $phone = $request->input('phone');
+        $text = $request->input('message');
 
         if (!$phone || !$text) {
             return response()->json([
