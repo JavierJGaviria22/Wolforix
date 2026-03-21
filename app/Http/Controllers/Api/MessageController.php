@@ -34,7 +34,7 @@ class MessageController extends Controller
         if ($phone == '573241579494') {
             die();
         }
-        if ($phone !== '573193787211') {
+        if ($phone !== '573122848902') {
             die();
         }
 
