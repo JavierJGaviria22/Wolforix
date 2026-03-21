@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,5 +48,13 @@ Route::prefix('v1')->group(function () {
     */
 
     Route::post('/leads/store', [LeadController::class, 'store']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pedidos 
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/orders/new', [OrderController::class, 'new']);
 
 });
