@@ -31,12 +31,12 @@ class MessageController extends Controller
 
         // echo $phone;die();
 
-        if ($phone == '573241579494') {
+        if ($phone == '573236524637') {
             die();
         }
-        if ($phone !== '573122848902') {
-            die();
-        }
+        // if ($phone !== '573122848902') {
+        //     die();
+        // }
 
         // Extraer mensaje
         $text = $data['data']['message']['conversation'] ?? null;
