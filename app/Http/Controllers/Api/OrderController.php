@@ -26,11 +26,11 @@ class OrderController extends Controller
             'apikey' => 'supersecreta123',
         ])->post('https://wpp.wolfora.cloud/message/sendText/wpp-test', [
             'number' => $phone,
-            'text' => '"¡Gracias por confiar en Wolfora Store! 🙌
+            'text' => '¡Gracias por confiar en Wolfora Store! 🙌
 • Tu pedido será despachado en las próximas 24 horas
 • Te mantendremos informado del estado de tu pedido por este mismo medio
 
-Si tienes alguna duda, no dudes en escribirnos 😊"'
+Si tienes alguna duda, no dudes en escribirnos 😊'
         ]);
 
         return response()->json([
