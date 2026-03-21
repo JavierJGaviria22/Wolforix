@@ -182,6 +182,7 @@ class MessageController extends Controller
             'contact_id' => $contact->id,
             'conversation_id' => $conversation->id,
             'message' => $text,
+            'tag' => $contact->tag,
             'number' => $phone,
             'context' => json_encode($context)
         ]);
