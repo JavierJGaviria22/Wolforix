@@ -34,7 +34,7 @@ class MessageController extends Controller
         if ($phone == '573241579494') {
             die();
         }
-        if ($phone !== '573193787211') {
+        if ($phone !== '573122848902') {
             die();
         }
 
@@ -126,6 +126,7 @@ class MessageController extends Controller
         $message = Message::create([
             'conversation_id' => $conversation->id,
             'contact_id' => $contact->id,
+            'tag' => $contact->tag,
             'direction' => 'incoming',
             'message_type' => 'text',
             'content' => $text,
