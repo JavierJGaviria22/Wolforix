@@ -155,42 +155,25 @@ class MessageController extends Controller
                 
                 // Generar nombre de archivo con conversation_id para referencia
                 $audioFileName = 'audio_conv_' . $conversation->id . '_' . time() . '.ogg';
+                
+                // Guardar el audio en storage local
+                $audioPath = 'audios/' . $audioFileName;
+                Storage::disk('private')->put($audioPath, $audioContent);
+                
+                // Obtener la URL completa del archivo guardado
+                $storagePath = storage_path('app/private/' . $audioPath);
+                $audioUrl = url('/storage/audios/' . $audioFileName);
 
-                // Enviar a n8n con el archivo binario usando multipart
-                $guzzleClient = new Client();
-                $guzzleClient->post('https://n8n.wolfora.cloud/webhook/audio', [
-                    'multipart' => [
-                        [
-                            'name' => 'contact_id',
-                            'contents' => $contact->id
-                        ],
-                        [
-                            'name' => 'conversation_id',
-                            'contents' => $conversation->id
-                        ],
-                        [
-                            'name' => 'tag',
-                            'contents' => $contact->tag ?? 'default'
-                        ],
-                        [
-                            'name' => 'number',
-                            'contents' => $phone
-                        ],
-                        [
-                            'name' => 'duration',
-                            'contents' => $audioDuration
-                        ],
-                        [
-                            'name' => 'mime_type',
-                            'contents' => $audioMimetype
-                        ],
-                        [
-                            'name' => 'audio',
-                            'contents' => $audioContent,
-                            'filename' => $audioFileName,
-                            'headers' => ['Content-Type' => $audioMimetype]
-                        ]
-                    ]
+                // Enviar a n8n con la URL del audio
+                Http::post('https://n8n.wolfora.cloud/webhook/audio', [
+                    'contact_id' => $contact->id,
+                    'conversation_id' => $conversation->id,
+                    'tag' => $contact->tag ?? 'default',
+                    'number' => $phone,
+                    'duration' => $audioDuration,
+                    'mime_type' => $audioMimetype,
+                    'audio_url' => $audioUrl,
+                    'audio_path' => $storagePath
                 ]);
 
             } catch (\Exception $e) {
@@ -208,7 +191,7 @@ class MessageController extends Controller
                 'conversation_id' => $conversation->id,
                 'message_type' => 'audio',
                 'duration' => $audioDuration,
-                'note' => 'Audio enviado a n8n para transcripción. Espera el webhook de transcripción.'
+                'note' => 'Audio guardado y enviado a n8n para transcripción.'
             ]);
         }
 
