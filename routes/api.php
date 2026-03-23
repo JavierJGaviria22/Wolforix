@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/messages/incoming', [MessageController::class, 'incoming']);
     Route::post('/messages/outgoing', [MessageController::class, 'outgoing']);
+    Route::post('/messages/transcription', [MessageController::class, 'incomingTranscription']);
 
     /*
     |--------------------------------------------------------------------------
