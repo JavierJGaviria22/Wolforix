@@ -153,18 +153,17 @@ class MessageController extends Controller
                 $audioContent = $response->getBody()->getContents();
                 $audioMimetype = $audioMessage['mimetype'] ?? 'audio/ogg; codecs=opus';
                 
-                // Generar nombre de archivo con conversation_id para referencia
+                // Generar nombre de archivo con conversation_id y timestamp
                 $audioFileName = 'audio_conv_' . $conversation->id . '_' . time() . '.ogg';
                 
-                // Guardar el audio en storage local
+                // Guardar en public storage (temporal, será eliminado por cron)
                 $audioPath = 'audios/' . $audioFileName;
-                Storage::disk('private')->put($audioPath, $audioContent);
+                Storage::disk('public')->put($audioPath, $audioContent);
                 
-                // Obtener la URL completa del archivo guardado
-                $storagePath = storage_path('app/private/' . $audioPath);
-                $audioUrl = url('/storage/audios/' . $audioFileName);
+                // Obtener URL pública del audio
+                $audioUrl = asset('storage/audios/' . $audioFileName);
 
-                // Enviar a n8n con la URL del audio
+                // Enviar a n8n con la URL pública (sin contenido binario)
                 Http::post('https://n8n.wolfora.cloud/webhook/audio', [
                     'contact_id' => $contact->id,
                     'conversation_id' => $conversation->id,
@@ -172,17 +171,16 @@ class MessageController extends Controller
                     'number' => $phone,
                     'duration' => $audioDuration,
                     'mime_type' => $audioMimetype,
-                    'audio_url' => $audioUrl,
-                    'audio_path' => $storagePath
+                    'audio_url' => $audioUrl
                 ]);
 
             } catch (\Exception $e) {
                 // Log error pero no detener el flujo
-                // \Log::error('Error procesando audio', [
-                //     'error' => $e->getMessage(),
-                //     'contact_id' => $contact->id,
-                //     'conversation_id' => $conversation->id
-                // ]);
+                \Log::error('Error procesando audio', [
+                    'error' => $e->getMessage(),
+                    'contact_id' => $contact->id,
+                    'conversation_id' => $conversation->id
+                ]);
             }
 
             return response()->json([
@@ -191,7 +189,7 @@ class MessageController extends Controller
                 'conversation_id' => $conversation->id,
                 'message_type' => 'audio',
                 'duration' => $audioDuration,
-                'note' => 'Audio guardado y enviado a n8n para transcripción.'
+                'note' => 'Audio guardado temporalmente y enviado a n8n para transcripción.'
             ]);
         }
 
