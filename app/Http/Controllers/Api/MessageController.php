@@ -156,28 +156,50 @@ class MessageController extends Controller
                 // Generar nombre de archivo con conversation_id para referencia
                 $audioFileName = 'audio_conv_' . $conversation->id . '_' . time() . '.ogg';
 
-                // Enviar a n8n con el archivo binario
-                Http::attach(
-                    'audio',
-                    $audioContent,
-                    $audioFileName,
-                    ['mime' => $audioMimetype]
-                )->post('https://n8n.wolfora.cloud/webhook/audio', [
-                    'contact_id' => $contact->id,
-                    'conversation_id' => $conversation->id,
-                    'tag' => $contact->tag,
-                    'number' => $phone,
-                    'duration' => $audioDuration,
-                    'mime_type' => $audioMimetype
+                // Enviar a n8n con el archivo binario usando multipart
+                $guzzleClient = new Client();
+                $guzzleClient->post('https://n8n.wolfora.cloud/webhook/audio', [
+                    'multipart' => [
+                        [
+                            'name' => 'contact_id',
+                            'contents' => $contact->id
+                        ],
+                        [
+                            'name' => 'conversation_id',
+                            'contents' => $conversation->id
+                        ],
+                        [
+                            'name' => 'tag',
+                            'contents' => $contact->tag ?? 'default'
+                        ],
+                        [
+                            'name' => 'number',
+                            'contents' => $phone
+                        ],
+                        [
+                            'name' => 'duration',
+                            'contents' => $audioDuration
+                        ],
+                        [
+                            'name' => 'mime_type',
+                            'contents' => $audioMimetype
+                        ],
+                        [
+                            'name' => 'audio',
+                            'contents' => $audioContent,
+                            'filename' => $audioFileName,
+                            'headers' => ['Content-Type' => $audioMimetype]
+                        ]
+                    ]
                 ]);
 
             } catch (\Exception $e) {
                 // Log error pero no detener el flujo
-                // \Log::error('Error procesando audio', [
-                //     'error' => $e->getMessage(),
-                //     'contact_id' => $contact->id,
-                //     'conversation_id' => $conversation->id
-                // ]);
+                \Log::error('Error procesando audio', [
+                    'error' => $e->getMessage(),
+                    'contact_id' => $contact->id,
+                    'conversation_id' => $conversation->id
+                ]);
             }
 
             return response()->json([
