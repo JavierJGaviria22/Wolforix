@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\SolicitudController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,5 +57,19 @@ Route::prefix('v1')->group(function () {
     */
 
     Route::post('/orders/new', [OrderController::class, 'new']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Solicitudes (peticiones de clientes: estado pedido, consultas, etc)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/solicitudes/store', [SolicitudController::class, 'store']);
+    Route::get('/solicitudes', [SolicitudController::class, 'index']);
+    Route::get('/solicitudes/{id}', [SolicitudController::class, 'show']);
+    Route::get('/solicitudes/contact/{contactId}', [SolicitudController::class, 'getByContact']);
+    Route::get('/solicitudes/pending/list', [SolicitudController::class, 'pending']);
+    Route::put('/solicitudes/{id}/status', [SolicitudController::class, 'updateStatus']);
+    Route::delete('/solicitudes/{id}', [SolicitudController::class, 'destroy']);
 
 });

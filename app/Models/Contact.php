@@ -44,6 +44,11 @@ class Contact extends Model
         return $this->hasMany(Lead::class);
     }
 
+    public function solicitudes()
+    {
+        return $this->hasMany(Solicitud::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Helpers
