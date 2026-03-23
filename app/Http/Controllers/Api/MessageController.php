@@ -178,11 +178,11 @@ class MessageController extends Controller
 
             } catch (\Exception $e) {
                 // Log error pero no detener el flujo
-                \Log::error('Error procesando audio', [
-                    'error' => $e->getMessage(),
-                    'contact_id' => $contact->id,
-                    'conversation_id' => $conversation->id
-                ]);
+                // \Log::error('Error procesando audio', [
+                //     'error' => $e->getMessage(),
+                //     'contact_id' => $contact->id,
+                //     'conversation_id' => $conversation->id
+                // ]);
             }
 
             return response()->json([
