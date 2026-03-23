@@ -22,7 +22,7 @@ class SolicitudController extends Controller
             'contact_id' => 'required|exists:contacts,id',
             'request_type' => 'required|string',
             'description' => 'required|string',
-            'priority' => 'nullable|string|in:baja,media,alta',
+            'priority' => 'nullable|string|in:low,medium,high',
             'due_date' => 'nullable|date'
         ]);
 
