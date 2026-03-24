@@ -11,8 +11,6 @@ use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\SpamLog;
-use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
 {
@@ -45,21 +43,19 @@ class MessageController extends Controller
 
         $messageData = $data['data']['message'];
         $text = $messageData['conversation'] ?? null;
+        $audioBase64 = $data['data']['message']['base64'] ?? null;
         $audioMessage = $messageData['audioMessage'] ?? null;
         $messageType = 'text';
-        $mediaUrl = null;
         $audioDuration = null;
 
         // Determinar tipo de mensaje
-        if ($audioMessage) {
+        if ($audioMessage && $audioBase64) {
             $messageType = 'audio';
-            $mediaUrl = $audioMessage['url'] ?? null;
             $audioDuration = $audioMessage['seconds'] ?? null;
-            $text = '[Audio message]'; // Placeholder para el campo content
         }
 
         // Validar que hay un mensaje válido
-        if (!$phone || (!$text && !$audioMessage)) {
+        if (!$phone || (!$text && !$audioBase64)) {
             return response()->json([
                 'error' => 'phone and message or audio required'
             ], 422);
@@ -137,51 +133,23 @@ class MessageController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | AUDIO: Solo descargar y enviar a n8n, NO guardar en BD
+        | AUDIO: Enviar base64 a n8n para transcripción
         |--------------------------------------------------------------------------
         */
 
-        if ($messageType === 'audio' && $mediaUrl) {
-            try {
-                // Descargar archivo binario del audio
-                $client = new Client();
-                $response = $client->get($mediaUrl, [
-                    'timeout' => 30,
-                    'connect_timeout' => 10
-                ]);
-                
-                $audioContent = $response->getBody()->getContents();
-                $audioMimetype = $audioMessage['mimetype'] ?? 'audio/ogg; codecs=opus';
-                
-                // Generar nombre de archivo con conversation_id y timestamp
-                $audioFileName = 'audio_conv_' . $conversation->id . '_' . time() . '.ogg';
-                
-                // Guardar en public storage (temporal, será eliminado por cron)
-                $audioPath = 'audios/' . $audioFileName;
-                Storage::disk('public')->put($audioPath, $audioContent);
-                
-                // Obtener URL pública del audio
-                $audioUrl = asset('storage/audios/' . $audioFileName);
+        if ($messageType === 'audio' && $audioBase64) {
+            $audioMimetype = $audioMessage['mimetype'] ?? 'audio/ogg; codecs=opus';
 
-                // Enviar a n8n con la URL pública (sin contenido binario)
-                Http::post('https://n8n.wolfora.cloud/webhook/audio', [
-                    'contact_id' => $contact->id,
-                    'conversation_id' => $conversation->id,
-                    'tag' => $contact->tag ?? 'default',
-                    'number' => $phone,
-                    'duration' => $audioDuration,
-                    'mime_type' => $audioMimetype,
-                    'audio_url' => $audioUrl
-                ]);
-
-            } catch (\Exception $e) {
-                // Log error pero no detener el flujo
-                \Log::error('Error procesando audio', [
-                    'error' => $e->getMessage(),
-                    'contact_id' => $contact->id,
-                    'conversation_id' => $conversation->id
-                ]);
-            }
+            // Enviar a n8n con el base64 para procesamiento
+            Http::post('https://n8n.wolfora.cloud/webhook/audio', [
+                'contact_id' => $contact->id,
+                'conversation_id' => $conversation->id,
+                'tag' => $contact->tag ?? 'default',
+                'number' => $phone,
+                'duration' => $audioDuration,
+                'mime_type' => $audioMimetype,
+                'audio_base64' => $audioBase64
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -189,7 +157,7 @@ class MessageController extends Controller
                 'conversation_id' => $conversation->id,
                 'message_type' => 'audio',
                 'duration' => $audioDuration,
-                'note' => 'Audio guardado temporalmente y enviado a n8n para transcripción.'
+                'note' => 'Audio enviado a n8n para transcripción.'
             ]);
         }
 
