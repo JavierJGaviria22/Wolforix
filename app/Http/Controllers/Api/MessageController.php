@@ -131,6 +131,31 @@ class MessageController extends Controller
             'last_message_at' => now()
         ]);
 
+        $rows = DB::select("SELECT * FROM (
+        SELECT 
+            z.id, 
+            CASE z.direction
+                WHEN 'incoming' THEN 'cliente'
+                WHEN 'outgoing' THEN 'asesor'
+            END AS tipo,
+            z.content 
+        FROM last_messages_view z
+        LEFT JOIN contacts c ON c.id = z.contact_id
+        WHERE c.phone IN ($phone, '573241579494')
+            AND z.conversation_id = $conversation->id
+        ORDER BY z.id DESC
+        LIMIT 10
+    ) zz
+    ORDER BY zz.id ASC;");
+
+        $context = collect($rows)->map(function ($row) {
+            return [
+                'id' => $row->id,
+                'role' => $row->tipo, // cliente / asesor
+                'message' => $row->content,
+            ];
+        })->values();
+
         /*
         |--------------------------------------------------------------------------
         | AUDIO: Enviar base64 a n8n para transcripción
@@ -148,7 +173,8 @@ class MessageController extends Controller
                 'number' => $phone,
                 'duration' => $audioDuration,
                 'mime_type' => $audioMimetype,
-                'audio_base64' => $audioBase64
+                'audio_base64' => $audioBase64,
+                'context' => json_encode($context)
             ]);
 
             return response()->json([
@@ -195,31 +221,6 @@ class MessageController extends Controller
                     'content' => $msg->content
                 ];
             });
-
-        $rows = DB::select("SELECT * FROM (
-        SELECT 
-            z.id, 
-            CASE z.direction
-                WHEN 'incoming' THEN 'cliente'
-                WHEN 'outgoing' THEN 'asesor'
-            END AS tipo,
-            z.content 
-        FROM last_messages_view z
-        LEFT JOIN contacts c ON c.id = z.contact_id
-        WHERE c.phone IN ($phone, '573241579494')
-            AND z.conversation_id = $conversation->id
-        ORDER BY z.id DESC
-        LIMIT 10
-    ) zz
-    ORDER BY zz.id ASC;");
-
-        $context = collect($rows)->map(function ($row) {
-            return [
-                'id' => $row->id,
-                'role' => $row->tipo, // cliente / asesor
-                'message' => $row->content,
-            ];
-        })->values();
 
         //llamar a n8n con el mensaje entrante del usuario
         Http::post('https://n8n.wolfora.cloud/webhook/mensaje', [
